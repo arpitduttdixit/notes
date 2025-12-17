@@ -4,8 +4,8 @@
   "description": "Local server to access Mac Notes for Chrome extension",
   "main": "notes-server.js",
   "scripts": {
-    "start": "node notes-server.js",
-    "dev": "nodemon notes-server.js"
+    "start": "bun run notes-server.js",
+    "dev": "bun --watch notes-server.js"
   },
   "keywords": ["mac", "notes", "api"],
   "author": "",
@@ -13,8 +13,5 @@
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
   }
 }

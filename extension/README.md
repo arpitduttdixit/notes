@@ -6,12 +6,12 @@ A Chrome extension that lets you search and read your Mac Notes directly from yo
 
 ### 1. Start the Notes Server
 
-First, make sure the Node.js server is running:
+First, make sure the Bun server is running:
 
 ```bash
 cd /Users/appel/notes
-npm install
-npm start
+bun install
+bun start
 ```
 
 The server should be running on `http://localhost:8765`
@@ -41,7 +41,7 @@ The server should be running on `http://localhost:8765`
 ## Troubleshooting
 
 **"Error: Make sure the notes server is running"**
-- Run `npm start` in the `/Users/appel/notes` directory
+- Run `bun start` in the `/Users/appel/notes` directory
 - Make sure port 8765 isn't being used by another app
 
 **Extension shows no notes**

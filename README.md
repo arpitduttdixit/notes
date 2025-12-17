@@ -1,17 +1,22 @@
 # Mac Notes Server for Chrome Extension
 
-A local Node.js server that provides API access to Mac Notes for Chrome extensions.
+A local server powered by Bun that provides API access to Mac Notes for Chrome extensions.
 
 ## Setup
 
 1. Install dependencies:
 ```bash
-npm install
+bun install
 ```
 
 2. Start the server:
 ```bash
-npm start
+bun start
+```
+
+Or for development with auto-reload:
+```bash
+bun dev
 ```
 
 The server will run on `http://localhost:8765`
