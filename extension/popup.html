@@ -14,9 +14,31 @@
         placeholder="Search your notes..."
         autofocus
       >
+      <button id="newNoteButton" class="new-note-button" title="Create new note">+ New Note</button>
     </div>
 
     <div id="status" class="status hidden"></div>
+
+    <div id="newNoteForm" class="new-note-form hidden">
+      <div class="form-header">
+        <h3>Create New Note</h3>
+        <button id="cancelNote" class="cancel-button">Cancel</button>
+      </div>
+      <input
+        type="text"
+        id="noteTitleInput"
+        class="note-input"
+        placeholder="Note title..."
+        maxlength="200"
+      >
+      <textarea
+        id="noteBodyInput"
+        class="note-textarea"
+        placeholder="Note content (optional)..."
+        rows="6"
+      ></textarea>
+      <button id="createNote" class="create-button">Create Note</button>
+    </div>
 
     <div id="results" class="results"></div>
 

@@ -17,6 +17,14 @@ const zoomOutBtn = document.getElementById('zoomOut');
 const zoomResetBtn = document.getElementById('zoomReset');
 const zoomLevelEl = document.getElementById('zoomLevel');
 
+// New note form elements
+const newNoteButton = document.getElementById('newNoteButton');
+const newNoteForm = document.getElementById('newNoteForm');
+const noteTitleInput = document.getElementById('noteTitleInput');
+const noteBodyInput = document.getElementById('noteBodyInput');
+const createNoteButton = document.getElementById('createNote');
+const cancelNoteButton = document.getElementById('cancelNote');
+
 // Initialize on load
 async function init() {
   showStatus('Loading notes...', 'info');
@@ -191,6 +199,83 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault();
       zoomReset();
     }
+  }
+});
+
+// New note functionality
+function showNewNoteForm() {
+  newNoteForm.classList.remove('hidden');
+  resultsContainer.classList.add('hidden');
+  noteView.classList.add('hidden');
+  noteTitleInput.value = '';
+  noteBodyInput.value = '';
+  noteTitleInput.focus();
+}
+
+function hideNewNoteForm() {
+  newNoteForm.classList.add('hidden');
+  resultsContainer.classList.remove('hidden');
+  searchInput.focus();
+}
+
+async function createNote() {
+  const title = noteTitleInput.value.trim();
+  const body = noteBodyInput.value.trim();
+
+  if (!title) {
+    showStatus('Please enter a note title', 'error');
+    return;
+  }
+
+  // Disable button while creating
+  createNoteButton.disabled = true;
+  createNoteButton.textContent = 'Creating...';
+
+  try {
+    const response = await fetch(`${NOTES_SERVER}/notes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ title, body })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to create note');
+    }
+
+    // Refresh notes cache
+    const notesResponse = await fetch(`${NOTES_SERVER}/notes`);
+    const notesData = await notesResponse.json();
+    notesCache = notesData.notes;
+
+    showStatus(`Note "${title}" created successfully!`, 'success');
+    setTimeout(() => hideStatus(), 3000);
+
+    // Hide form and show results
+    hideNewNoteForm();
+    displayResults(notesCache);
+  } catch (error) {
+    console.error('Error creating note:', error);
+    showStatus(`Error: ${error.message}`, 'error');
+  } finally {
+    createNoteButton.disabled = false;
+    createNoteButton.textContent = 'Create Note';
+  }
+}
+
+// New note button event listeners
+newNoteButton.addEventListener('click', showNewNoteForm);
+cancelNoteButton.addEventListener('click', hideNewNoteForm);
+createNoteButton.addEventListener('click', createNote);
+
+// Allow Enter key to create note when in title field
+noteTitleInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    createNote();
   }
 });
 

@@ -8,6 +8,9 @@ const PORT = 8765;
 // Enable CORS for Chrome extension
 app.use(cors());
 
+// Parse JSON bodies
+app.use(express.json());
+
 // Cache for note titles
 let notesCache = [];
 
@@ -97,6 +100,52 @@ app.get('/notes/:noteId', (req, res) => {
     } else {
       res.status(500).json({ error: 'Failed to fetch note', message: error.message });
     }
+  }
+});
+
+// POST /notes - Create a new note
+app.post('/notes', (req, res) => {
+  const { title, body } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+
+  // Escape quotes for AppleScript
+  const escapedTitle = title.replace(/"/g, '\\"').replace(/'/g, "\\'");
+  const escapedBody = (body || '').replace(/"/g, '\\"').replace(/'/g, "\\'");
+
+  const script = `
+    tell application "Notes"
+      try
+        set newNote to make new note at folder "Notes" with properties {name:"${escapedTitle}", body:"${escapedBody}"}
+        return id of newNote
+      on error errMsg
+        return "Error: " & errMsg
+      end try
+    end tell
+  `;
+
+  try {
+    const result = execSync(`osascript -e '${script}'`, { encoding: 'utf-8' });
+    const trimmedResult = result.trim();
+
+    if (trimmedResult.startsWith('Error:')) {
+      console.error('AppleScript error:', trimmedResult);
+      return res.status(500).json({ error: 'Failed to create note', message: trimmedResult });
+    }
+
+    // Refresh cache after creating note
+    notesCache = fetchAllTitles();
+
+    res.json({
+      message: 'Note created successfully',
+      noteId: trimmedResult,
+      title: title
+    });
+  } catch (error) {
+    console.error('Error creating note:', error);
+    res.status(500).json({ error: 'Failed to create note', message: error.message });
   }
 });
 

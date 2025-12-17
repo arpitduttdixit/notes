@@ -25,10 +25,13 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 #searchInput {
-  width: 100%;
+  flex: 1;
   padding: 10px 12px;
   border: 1px solid #d1d1d6;
   border-radius: 8px;
@@ -39,6 +42,27 @@ body {
 
 #searchInput:focus {
   border-color: #007aff;
+}
+
+.new-note-button {
+  background: #007aff;
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.new-note-button:hover {
+  background: #0051d5;
+}
+
+.new-note-button:active {
+  background: #003d9e;
 }
 
 .status {
@@ -64,6 +88,99 @@ body {
 
 .hidden {
   display: none !important;
+}
+
+.new-note-form {
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.form-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.cancel-button {
+  background: none;
+  border: none;
+  color: #007aff;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  transition: opacity 0.2s;
+}
+
+.cancel-button:hover {
+  opacity: 0.7;
+}
+
+.note-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d1d6;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.note-input:focus {
+  border-color: #007aff;
+}
+
+.note-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d1d6;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.note-textarea:focus {
+  border-color: #007aff;
+}
+
+.create-button {
+  width: 100%;
+  background: #007aff;
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.create-button:hover {
+  background: #0051d5;
+}
+
+.create-button:active {
+  background: #003d9e;
+}
+
+.create-button:disabled {
+  background: #d1d1d6;
+  cursor: not-allowed;
 }
 
 .results {
