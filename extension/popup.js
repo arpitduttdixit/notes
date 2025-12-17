@@ -2,6 +2,7 @@ const NOTES_SERVER = 'http://localhost:8765';
 
 let notesCache = [];
 let searchTimeout = null;
+let currentZoom = 100; // Current zoom level percentage
 
 // DOM elements
 const searchInput = document.getElementById('searchInput');
@@ -11,6 +12,10 @@ const noteTitle = document.getElementById('noteTitle');
 const noteBody = document.getElementById('noteBody');
 const backButton = document.getElementById('backButton');
 const statusEl = document.getElementById('status');
+const zoomInBtn = document.getElementById('zoomIn');
+const zoomOutBtn = document.getElementById('zoomOut');
+const zoomResetBtn = document.getElementById('zoomReset');
+const zoomLevelEl = document.getElementById('zoomLevel');
 
 // Initialize on load
 async function init() {
@@ -112,6 +117,9 @@ backButton.addEventListener('click', () => {
   resultsContainer.classList.remove('hidden');
   searchInput.parentElement.classList.remove('hidden');
   searchInput.focus();
+
+  // Reset zoom when going back
+  zoomReset();
 });
 
 // Status message helpers
@@ -138,6 +146,50 @@ searchInput.addEventListener('keydown', (e) => {
     const firstResult = resultsContainer.querySelector('.result-item');
     if (firstResult) {
       firstResult.click();
+    }
+  }
+});
+
+// Zoom functionality
+function setZoom(zoomLevel) {
+  currentZoom = Math.max(50, Math.min(200, zoomLevel)); // Limit between 50% and 200%
+  noteBody.style.transform = `scale(${currentZoom / 100})`;
+  noteBody.style.transformOrigin = 'top left';
+  zoomLevelEl.textContent = `${currentZoom}%`;
+}
+
+function zoomIn() {
+  setZoom(currentZoom + 10);
+}
+
+function zoomOut() {
+  setZoom(currentZoom - 10);
+}
+
+function zoomReset() {
+  setZoom(100);
+}
+
+// Zoom button event listeners
+zoomInBtn.addEventListener('click', zoomIn);
+zoomOutBtn.addEventListener('click', zoomOut);
+zoomResetBtn.addEventListener('click', zoomReset);
+
+// Keyboard shortcuts for zoom
+document.addEventListener('keydown', (e) => {
+  // Check if Cmd (Mac) or Ctrl (Windows/Linux) is pressed
+  const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+
+  if (isCmdOrCtrl && !noteView.classList.contains('hidden')) {
+    if (e.key === '+' || e.key === '=') {
+      e.preventDefault();
+      zoomIn();
+    } else if (e.key === '-' || e.key === '_') {
+      e.preventDefault();
+      zoomOut();
+    } else if (e.key === '0') {
+      e.preventDefault();
+      zoomReset();
     }
   }
 });
