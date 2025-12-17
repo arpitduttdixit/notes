@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Mac Notes Search",
+  "version": "1.0.0",
+  "description": "Search and access your Mac Notes",
+  "permissions": [],
+  "host_permissions": ["http://localhost:8765/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "notes.png"
+    }
+  },
+  "icons": {
+    "16": "notes.png"
+  }
+}

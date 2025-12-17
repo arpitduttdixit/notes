@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mac Notes Search</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="search-box">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search your notes..."
+        autofocus
+      >
+    </div>
+
+    <div id="status" class="status hidden"></div>
+
+    <div id="results" class="results"></div>
+
+    <div id="noteView" class="note-view hidden">
+      <button id="backButton" class="back-button">← Back to results</button>
+      <h2 id="noteTitle"></h2>
+      <div id="noteBody" class="note-body"></div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
