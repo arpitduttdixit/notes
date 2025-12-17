@@ -95,7 +95,11 @@ async function openNote(note) {
     const data = await response.json();
 
     // Display the note body
-    noteBody.innerHTML = data.body;
+    if (data.body && data.body !== 'undefined') {
+      noteBody.innerHTML = data.body;
+    } else {
+      noteBody.innerHTML = '<div class="no-results">This note appears to be empty</div>';
+    }
   } catch (error) {
     console.error('Error fetching note:', error);
     noteBody.innerHTML = '<div class="no-results">Error loading note</div>';

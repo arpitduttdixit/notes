@@ -55,17 +55,48 @@ app.get('/notes', (req, res) => {
 app.get('/notes/:noteId', (req, res) => {
   const { noteId } = req.params;
 
+  // Escape single quotes in note ID for AppleScript
+  const escapedId = noteId.replace(/'/g, "\\'");
+
   const script = `
     tell application "Notes"
-      return body of note id "${noteId}"
+      try
+        set noteBody to body of note id "${escapedId}"
+        return noteBody
+      on error errMsg
+        return "Error: " & errMsg
+      end try
     end tell
   `;
 
   try {
-    const body = execSync(`osascript -e '${script}'`, { encoding: 'utf-8' });
-    res.json({ id: noteId, body: body.trim() });
+    const body = execSync(`osascript -e '${script}'`, {
+      encoding: 'utf-8',
+      maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+    });
+    const trimmedBody = body.trim();
+
+    // Check if body is empty or an error message
+    if (!trimmedBody || trimmedBody.length === 0) {
+      res.json({ id: noteId, body: '<p><em>This note appears to be empty</em></p>' });
+    } else if (trimmedBody.startsWith('Error:')) {
+      console.error('AppleScript error:', trimmedBody);
+      res.json({ id: noteId, body: `<p><em>Could not load note: ${trimmedBody}</em></p>` });
+    } else {
+      res.json({ id: noteId, body: trimmedBody });
+    }
   } catch (error) {
-    res.status(404).json({ error: 'Note not found' });
+    console.error('Error fetching note:', error);
+
+    // Handle buffer overflow errors
+    if (error.code === 'ENOBUFS' || error.message.includes('maxBuffer')) {
+      res.json({
+        id: noteId,
+        body: '<div class="no-results"><strong>Note too large to display</strong><br><br>This note contains large embedded images or attachments that exceed the display limit. Please open it in the Notes app.</div>'
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to fetch note', message: error.message });
+    }
   }
 });
 
