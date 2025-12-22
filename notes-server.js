@@ -75,7 +75,7 @@ app.get('/notes/:noteId', (req, res) => {
   try {
     const body = execSync(`osascript -e '${script}'`, {
       encoding: 'utf-8',
-      maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+      maxBuffer: 50 * 1024 * 1024 // 50MB buffer
     });
     const trimmedBody = body.trim();
 
