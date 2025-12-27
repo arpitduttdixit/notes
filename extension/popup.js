@@ -25,6 +25,9 @@ const noteBodyInput = document.getElementById('noteBodyInput');
 const createNoteButton = document.getElementById('createNote');
 const cancelNoteButton = document.getElementById('cancelNote');
 
+// Send to Claude button
+const sendToClaudeBtn = document.getElementById('sendToClaude');
+
 // Initialize on load
 async function init() {
   showStatus('Loading notes...', 'info');
@@ -278,6 +281,133 @@ noteTitleInput.addEventListener('keydown', (e) => {
     createNote();
   }
 });
+
+// Helper function to extract text from HTML
+function extractTextFromHTML(html) {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+
+  // Remove images and other non-text elements
+  tempDiv.querySelectorAll('img, script, style').forEach(el => el.remove());
+
+  return tempDiv.textContent.trim();
+}
+
+// Send note to Claude function
+async function sendToClaude() {
+  try {
+    // Disable button and show loading state
+    sendToClaudeBtn.disabled = true;
+    sendToClaudeBtn.textContent = 'Sending...';
+
+    // Get note content
+    const title = noteTitle.textContent;
+    const bodyHTML = noteBody.innerHTML;
+    const bodyText = extractTextFromHTML(bodyHTML);
+
+    // Format the message
+    const message = `Here's my note titled "${title}":\n\n${bodyText}`;
+
+    // Query current tab
+    const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (currentTab.url?.startsWith('https://claude.ai')) {
+      // Current tab is Claude - paste directly
+      await chrome.scripting.executeScript({
+        target: { tabId: currentTab.id },
+        func: (text) => {
+          const editor = document.querySelector('.ProseMirror');
+          if (!editor) return { success: false, error: 'Editor not found' };
+
+          editor.focus();
+
+          // Clear existing content by selecting all and deleting
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(editor);
+          selection.removeAllRanges();
+          selection.addRange(range);
+
+          // Delete selected content
+          document.execCommand('delete');
+
+          const clipboardData = new DataTransfer();
+          clipboardData.setData('text/plain', text);
+          const pasteEvent = new ClipboardEvent('paste', {
+            bubbles: true,
+            cancelable: true,
+            clipboardData: clipboardData
+          });
+          editor.dispatchEvent(pasteEvent);
+          return { success: true };
+        },
+        args: [message]
+      });
+
+      showStatus('Note sent to Claude!', 'success');
+    } else {
+      // Open new Claude tab and wait for it to load
+      const newTab = await chrome.tabs.create({
+        url: 'https://claude.ai/new',
+        active: true
+      });
+
+      // Wait for page to load, then paste
+      chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+        if (tabId === newTab.id && info.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(listener);
+
+          // Small delay to ensure editor is ready
+          setTimeout(async () => {
+            await chrome.scripting.executeScript({
+              target: { tabId: newTab.id },
+              func: (text) => {
+                const editor = document.querySelector('.ProseMirror');
+                if (!editor) return { success: false };
+
+                editor.focus();
+
+                // Clear existing content by selecting all and deleting
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(editor);
+                selection.removeAllRanges();
+                selection.addRange(range);
+
+                // Delete selected content
+                document.execCommand('delete');
+
+                const clipboardData = new DataTransfer();
+                clipboardData.setData('text/plain', text);
+                const pasteEvent = new ClipboardEvent('paste', {
+                  bubbles: true,
+                  cancelable: true,
+                  clipboardData: clipboardData
+                });
+                editor.dispatchEvent(pasteEvent);
+                return { success: true };
+              },
+              args: [message]
+            });
+          }, 1000);
+        }
+      });
+
+      showStatus('Opening Claude...', 'success');
+    }
+
+    setTimeout(() => hideStatus(), 3000);
+  } catch (error) {
+    console.error('Error sending to Claude:', error);
+    showStatus(`Error: ${error.message}`, 'error');
+  } finally {
+    sendToClaudeBtn.disabled = false;
+    sendToClaudeBtn.textContent = '💬 Send to Claude';
+  }
+}
+
+// Send to Claude button event listener
+sendToClaudeBtn.addEventListener('click', sendToClaude);
 
 // Initialize the extension
 init();

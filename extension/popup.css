@@ -305,6 +305,38 @@ body {
   text-align: center;
 }
 
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.send-to-claude-button {
+  background: #007aff;
+  border: none;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.send-to-claude-button:hover {
+  background: #0051d5;
+}
+
+.send-to-claude-button:active {
+  background: #003d9e;
+}
+
+.send-to-claude-button:disabled {
+  background: #d1d1d6;
+  cursor: not-allowed;
+}
+
 #noteTitle {
   font-size: 18px;
   font-weight: 600;
