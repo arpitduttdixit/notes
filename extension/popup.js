@@ -282,15 +282,49 @@ noteTitleInput.addEventListener('keydown', (e) => {
   }
 });
 
-// Helper function to extract text from HTML
+// Helper function to extract text from HTML (removes images for text-only)
 function extractTextFromHTML(html) {
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
 
-  // Remove images and other non-text elements
+  // Remove images, scripts and styles for plain text
   tempDiv.querySelectorAll('img, script, style').forEach(el => el.remove());
 
   return tempDiv.textContent.trim();
+}
+
+// Helper function to extract images from HTML
+function extractImagesFromHTML(html) {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  const images = [];
+
+  tempDiv.querySelectorAll('img').forEach(img => {
+    const src = img.src;
+    if (src && src.startsWith('data:image/')) {
+      images.push({
+        src: src,
+        alt: img.alt || ''
+      });
+    }
+  });
+
+  return images;
+}
+
+// Helper function to convert base64 to Blob
+function base64ToBlob(base64) {
+  const parts = base64.split(';base64,');
+  const contentType = parts[0].split(':')[1];
+  const raw = window.atob(parts[1]);
+  const rawLength = raw.length;
+  const uInt8Array = new Uint8Array(rawLength);
+
+  for (let i = 0; i < rawLength; ++i) {
+    uInt8Array[i] = raw.charCodeAt(i);
+  }
+
+  return new Blob([uInt8Array], { type: contentType });
 }
 
 // Send note to Claude function
@@ -304,96 +338,89 @@ async function sendToClaude() {
     const title = noteTitle.textContent;
     const bodyHTML = noteBody.innerHTML;
     const bodyText = extractTextFromHTML(bodyHTML);
+    const images = extractImagesFromHTML(bodyHTML);
 
     // Format the message
-    const message = `Here's my note titled "${title}":\n\n${bodyText}`;
+    const messageText = `Here's my note titled "${title}":\n\n${bodyText}`;
 
     // Query current tab
     const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     if (currentTab.url?.startsWith('https://claude.ai')) {
-      // Current tab is Claude - paste directly
-      await chrome.scripting.executeScript({
-        target: { tabId: currentTab.id },
-        func: (text) => {
-          const editor = document.querySelector('.ProseMirror');
-          if (!editor) return { success: false, error: 'Editor not found' };
+      // Current tab is Claude - send to content script
+      chrome.tabs.sendMessage(currentTab.id, {
+        type: 'pasteText',
+        text: messageText
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('Error sending text:', chrome.runtime.lastError);
+          showStatus('Error: Make sure you are on a Claude.ai page', 'error');
+          return;
+        }
 
-          editor.focus();
-
-          // Clear existing content by selecting all and deleting
-          const selection = window.getSelection();
-          const range = document.createRange();
-          range.selectNodeContents(editor);
-          selection.removeAllRanges();
-          selection.addRange(range);
-
-          // Delete selected content
-          document.execCommand('delete');
-
-          const clipboardData = new DataTransfer();
-          clipboardData.setData('text/plain', text);
-          const pasteEvent = new ClipboardEvent('paste', {
-            bubbles: true,
-            cancelable: true,
-            clipboardData: clipboardData
+        // Then send each image with delays
+        if (images.length > 0) {
+          images.forEach((image, index) => {
+            setTimeout(() => {
+              chrome.tabs.sendMessage(currentTab.id, {
+                type: 'uploadImage',
+                imageBlob: image.src,
+                imageName: `note-image-${index + 1}.png`
+              });
+            }, (index + 1) * 500); // Start after 500ms, then 500ms between each
           });
-          editor.dispatchEvent(pasteEvent);
-          return { success: true };
-        },
-        args: [message]
-      });
 
-      showStatus('Note sent to Claude!', 'success');
+          setTimeout(() => {
+            showStatus(`Note sent with ${images.length} image(s)!`, 'success');
+          }, (images.length + 1) * 500 + 500);
+        } else {
+          showStatus('Note sent to Claude!', 'success');
+        }
+      });
     } else {
-      // Open new Claude tab and wait for it to load
+      // Open new Claude tab
       const newTab = await chrome.tabs.create({
         url: 'https://claude.ai/new',
         active: true
       });
 
-      // Wait for page to load, then paste
+      // Wait for page to load
       chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
         if (tabId === newTab.id && info.status === 'complete') {
           chrome.tabs.onUpdated.removeListener(listener);
 
-          // Small delay to ensure editor is ready
-          setTimeout(async () => {
-            await chrome.scripting.executeScript({
-              target: { tabId: newTab.id },
-              func: (text) => {
-                const editor = document.querySelector('.ProseMirror');
-                if (!editor) return { success: false };
+          // Wait for Claude editor to be ready
+          setTimeout(() => {
+            // Send text
+            chrome.tabs.sendMessage(newTab.id, {
+              type: 'pasteText',
+              text: messageText
+            }, (response) => {
+              if (chrome.runtime.lastError) {
+                console.error('Error:', chrome.runtime.lastError);
+                return;
+              }
 
-                editor.focus();
-
-                // Clear existing content by selecting all and deleting
-                const selection = window.getSelection();
-                const range = document.createRange();
-                range.selectNodeContents(editor);
-                selection.removeAllRanges();
-                selection.addRange(range);
-
-                // Delete selected content
-                document.execCommand('delete');
-
-                const clipboardData = new DataTransfer();
-                clipboardData.setData('text/plain', text);
-                const pasteEvent = new ClipboardEvent('paste', {
-                  bubbles: true,
-                  cancelable: true,
-                  clipboardData: clipboardData
+              // Send images
+              if (images.length > 0) {
+                images.forEach((image, index) => {
+                  setTimeout(() => {
+                    chrome.tabs.sendMessage(newTab.id, {
+                      type: 'uploadImage',
+                      imageBlob: image.src,
+                      imageName: `note-image-${index + 1}.png`
+                    });
+                  }, (index + 1) * 500);
                 });
-                editor.dispatchEvent(pasteEvent);
-                return { success: true };
-              },
-              args: [message]
+
+                showStatus(`Opening Claude with ${images.length} image(s)...`, 'success');
+              } else {
+                showStatus('Opening Claude...', 'success');
+              }
             });
-          }, 1000);
+          }, 1500); // Wait 1.5s for editor to fully load
         }
       });
-
-      showStatus('Opening Claude...', 'success');
     }
 
     setTimeout(() => hideStatus(), 3000);

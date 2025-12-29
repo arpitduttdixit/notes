@@ -3,10 +3,17 @@
   "name": "Mac Notes Search",
   "version": "1.0.0",
   "description": "Search and access your Mac Notes",
-  "permissions": ["tabs", "activeTab", "scripting"],
+  "permissions": ["tabs", "activeTab", "scripting", "clipboardWrite"],
   "host_permissions": [
     "http://localhost:8765/*",
     "https://claude.ai/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://claude.ai/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
   ],
   "action": {
     "default_popup": "popup.html",
