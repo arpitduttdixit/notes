@@ -28,6 +28,19 @@ const cancelNoteButton = document.getElementById('cancelNote');
 // Send to Claude button
 const sendToClaudeBtn = document.getElementById('sendToClaude');
 
+// Chat capture elements
+const claudeActions = document.getElementById('claudeActions');
+const captureChatBtn = document.getElementById('captureChat');
+const chatPreviewModal = document.getElementById('chatPreview');
+const closePreviewBtn = document.getElementById('closePreview');
+const chatTitleInput = document.getElementById('chatTitle');
+const messagesPreviewEl = document.getElementById('messagesPreview');
+const selectionInfoEl = document.getElementById('selectionInfo');
+const saveChatBtn = document.getElementById('saveChat');
+
+// Chat data storage
+let currentChatData = null;
+
 // Initialize on load
 async function init() {
   showStatus('Loading notes...', 'info');
@@ -435,6 +448,233 @@ async function sendToClaude() {
 
 // Send to Claude button event listener
 sendToClaudeBtn.addEventListener('click', sendToClaude);
+
+// ============================================
+// Chat Capture Functionality
+// ============================================
+
+// Show/hide capture button based on current tab
+async function updateUIForClaudeChat() {
+  const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+
+  if (tab?.url?.includes('claude.ai/chat/')) {
+    claudeActions.classList.remove('hidden');
+  } else {
+    claudeActions.classList.add('hidden');
+  }
+}
+
+// Capture chat button handler
+async function captureChat() {
+  const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+
+  // Show loading state
+  showStatus('Extracting chat...', 'info');
+
+  // Add timeout to detect if content script isn't responding
+  const timeout = setTimeout(() => {
+    showStatus('Error: Content script not responding. Try refreshing the Claude page.', 'error');
+  }, 3000);
+
+  // Request chat data from content script
+  chrome.tabs.sendMessage(tab.id, {type: 'extractChat'}, (response) => {
+    clearTimeout(timeout);
+
+    if (chrome.runtime.lastError) {
+      console.error('Chrome runtime error:', chrome.runtime.lastError);
+      showStatus('Error: Content script not loaded. Refresh the Claude page and try again.', 'error');
+      return;
+    }
+
+    if (!response?.success) {
+      console.error('Extraction failed:', response);
+      showStatus(`Error: ${response?.error || 'Could not extract chat'}`, 'error');
+      return;
+    }
+
+    console.log('Chat extracted successfully:', response.data.totalMessages, 'messages');
+    hideStatus();
+    showChatPreview(response.data);
+  });
+}
+
+// Show chat preview modal
+function showChatPreview(chatData) {
+  currentChatData = chatData;
+
+  // Show modal
+  chatPreviewModal.classList.remove('hidden');
+
+  // Update selection info
+  updateSelectionInfo();
+
+  // Clear previous title
+  chatTitleInput.value = '';
+
+  // Set default mode to quick
+  document.querySelector('input[name="mode"][value="quick"]').checked = true;
+}
+
+// Update selection info based on current mode
+function updateSelectionInfo() {
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  let count = 0;
+
+  if (!currentChatData) {
+    selectionInfoEl.textContent = '0 messages selected';
+    return;
+  }
+
+  switch(mode) {
+    case 'quick':
+      count = Math.min(10, currentChatData.messages.length);
+      break;
+    case 'code':
+      count = currentChatData.messages.filter(m => m.hasCode).length + 1; // +1 for last assistant message
+      break;
+    case 'full':
+      count = currentChatData.messages.length;
+      break;
+    case 'custom':
+      count = currentChatData.messages.length; // TODO: implement custom selection
+      break;
+  }
+
+  selectionInfoEl.textContent = `${count} message${count !== 1 ? 's' : ''} selected`;
+}
+
+// Generate automatic title from chat
+function generateTitle(chatData) {
+  const firstUserMsg = chatData.messages.find(m => m.role === 'user');
+  if (firstUserMsg) {
+    const title = firstUserMsg.content.substring(0, 50).trim();
+    return title.length < firstUserMsg.content.length ? title + '...' : title;
+  }
+  return `Claude Chat - ${new Date().toLocaleDateString()}`;
+}
+
+// Format messages into note body
+function formatMessages(messages, chatData) {
+  let body = `Source: ${chatData.url}\n`;
+  body += `Saved: ${new Date().toLocaleString()}\n`;
+  body += `Messages: ${messages.filter(m => m.role === 'user').length} user, `;
+  body += `${messages.filter(m => m.role === 'assistant').length} assistant\n\n`;
+  body += '─────────────────────────────────\n\n';
+
+  messages.forEach(msg => {
+    if (msg.role === 'user') {
+      body += '👤 User:\n';
+    } else {
+      body += '🤖 Claude:\n';
+    }
+    body += msg.content + '\n\n';
+    body += '─────────────────────────────────\n\n';
+  });
+
+  return body;
+}
+
+// Format chat note based on selected mode
+function formatChatNote(chatData, mode) {
+  let messages = chatData.messages;
+
+  // Filter based on mode
+  switch(mode) {
+    case 'quick':
+      messages = messages.slice(-10); // Last 5 exchanges (10 messages)
+      break;
+    case 'code':
+      const codeMessages = messages.filter(m => m.hasCode);
+      // Always include last assistant message
+      const lastAssistant = messages.filter(m => m.role === 'assistant').pop();
+      if (lastAssistant && !codeMessages.find(m => m.index === lastAssistant.index)) {
+        codeMessages.push(lastAssistant);
+      }
+      // Sort by index to maintain order
+      messages = codeMessages.sort((a, b) => a.index - b.index);
+      break;
+    case 'full':
+      // Use all messages
+      break;
+    case 'custom':
+      // TODO: implement custom selection
+      break;
+  }
+
+  // Generate title
+  const title = chatTitleInput.value.trim() || generateTitle(chatData);
+
+  // Format body
+  const body = formatMessages(messages, chatData);
+
+  return { title, body };
+}
+
+// Save chat as note
+async function saveChatAsNote() {
+  if (!currentChatData) {
+    showStatus('Error: No chat data available', 'error');
+    return;
+  }
+
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const { title, body } = formatChatNote(currentChatData, mode);
+
+  // Disable button while saving
+  saveChatBtn.disabled = true;
+  saveChatBtn.textContent = 'Saving...';
+
+  try {
+    const response = await fetch(`${NOTES_SERVER}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, body })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to create note');
+    }
+
+    // Refresh cache
+    const notesResponse = await fetch(`${NOTES_SERVER}/notes`);
+    const notesData = await notesResponse.json();
+    notesCache = notesData.notes;
+
+    // Close modal and show success
+    chatPreviewModal.classList.add('hidden');
+    showStatus(`Note "${title}" created!`, 'success');
+
+    // Update display
+    displayResults(notesCache);
+
+  } catch (error) {
+    showStatus(`Error: ${error.message}`, 'error');
+  } finally {
+    saveChatBtn.disabled = false;
+    saveChatBtn.textContent = 'Save to Notes';
+  }
+}
+
+// Event listeners for chat capture
+captureChatBtn.addEventListener('click', captureChat);
+saveChatBtn.addEventListener('click', saveChatAsNote);
+closePreviewBtn.addEventListener('click', () => {
+  chatPreviewModal.classList.add('hidden');
+});
+
+// Update selection info when mode changes
+document.querySelectorAll('input[name="mode"]').forEach(radio => {
+  radio.addEventListener('change', updateSelectionInfo);
+});
+
+// Update UI when tab changes
+chrome.tabs.onActivated.addListener(updateUIForClaudeChat);
+chrome.tabs.onUpdated.addListener(updateUIForClaudeChat);
+
+// Check on load
+updateUIForClaudeChat();
 
 // Initialize the extension
 init();

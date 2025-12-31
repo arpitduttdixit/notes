@@ -19,6 +19,13 @@
 
     <div id="status" class="status hidden"></div>
 
+    <!-- Claude Chat Capture Button (shown only on claude.ai/chat/*) -->
+    <div id="claudeActions" class="claude-actions hidden">
+      <button id="captureChat" class="capture-button">
+        📝 Create Note from Chat
+      </button>
+    </div>
+
     <div id="newNoteForm" class="new-note-form hidden">
       <div class="form-header">
         <h3>Create New Note</h3>
@@ -57,6 +64,46 @@
       </div>
       <h2 id="noteTitle"></h2>
       <div id="noteBody" class="note-body"></div>
+    </div>
+  </div>
+
+  <!-- Chat Preview Modal -->
+  <div id="chatPreview" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Create Note from Chat</h3>
+        <button id="closePreview" class="close-btn">✕</button>
+      </div>
+
+      <div class="extraction-modes">
+        <label>
+          <input type="radio" name="mode" value="quick" checked>
+          <span>Quick Save (Last 5 messages)</span>
+        </label>
+        <label>
+          <input type="radio" name="mode" value="code">
+          <span>Code & Solutions Only</span>
+        </label>
+        <label>
+          <input type="radio" name="mode" value="full">
+          <span>Full Conversation</span>
+        </label>
+        <label>
+          <input type="radio" name="mode" value="custom">
+          <span>Custom Selection</span>
+        </label>
+      </div>
+
+      <input type="text" id="chatTitle" class="chat-title-input" placeholder="Note title (auto-generated if empty)">
+
+      <div id="messagesPreview" class="messages-preview">
+        <!-- Populated dynamically with message checkboxes for custom mode -->
+      </div>
+
+      <div class="modal-footer">
+        <span id="selectionInfo" class="selection-info">5 messages selected</span>
+        <button id="saveChat" class="save-btn">Save to Notes</button>
+      </div>
     </div>
   </div>
 
