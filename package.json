@@ -5,17 +5,28 @@
   "main": "notes-server.js",
   "scripts": {
     "start": "bun run notes-server.js",
-    "dev": "bun --watch notes-server.js"
+    "dev": "bun --watch notes-server.js",
+    "prepare": "husky"
   },
   "keywords": [
     "mac",
     "notes",
     "api"
   ],
+  "lint-staged": {
+    "**/*.{js,ts,jsx,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
+    "eslint": "^9.39.2",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4"
   }
 }
