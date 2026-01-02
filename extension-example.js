@@ -1,7 +1,7 @@
 // Chrome Extension Example Code
 // This shows how to integrate with the notes server
 
-const NOTES_SERVER = 'http://localhost:8765';
+const NOTES_SERVER = "http://localhost:8765";
 
 let notesCache = [];
 
@@ -13,14 +13,14 @@ async function loadNotes() {
     notesCache = data.notes;
     console.log(`Loaded ${notesCache.length} notes`);
   } catch (error) {
-    console.error('Failed to load notes:', error);
+    console.error("Failed to load notes:", error);
   }
 }
 
 // Search notes locally (instant, no server call)
 function searchNotes(query) {
   const lowerQuery = query.toLowerCase();
-  return notesCache.filter(note =>
+  return notesCache.filter((note) =>
     note.title.toLowerCase().includes(lowerQuery)
   );
 }
@@ -28,11 +28,13 @@ function searchNotes(query) {
 // Fetch full note body when user clicks (server call)
 async function fetchNoteBody(noteId) {
   try {
-    const res = await fetch(`${NOTES_SERVER}/notes/${encodeURIComponent(noteId)}`);
+    const res = await fetch(
+      `${NOTES_SERVER}/notes/${encodeURIComponent(noteId)}`
+    );
     const data = await res.json();
     return data.body;
   } catch (error) {
-    console.error('Failed to fetch note:', error);
+    console.error("Failed to fetch note:", error);
     return null;
   }
 }
@@ -50,7 +52,7 @@ function handleSearchInput(searchTerm) {
 
 function displayResults(results) {
   // Update your UI with search results
-  console.log('Search results:', results);
+  console.log("Search results:", results);
 }
 
 // Handle result click
@@ -58,7 +60,7 @@ async function handleResultClick(noteId) {
   const body = await fetchNoteBody(noteId);
   if (body) {
     // Do something with the note body
-    console.log('Note body:', body);
+    console.log("Note body:", body);
   }
 }
 

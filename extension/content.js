@@ -1,24 +1,24 @@
 // Content script that runs on claude.ai
 // This script has elevated privileges and can directly manipulate the page DOM
 
-console.log('Mac Notes content script loaded on:', window.location.href);
+console.log("Mac Notes content script loaded on:", window.location.href);
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'pasteText') {
+  if (message.type === "pasteText") {
     pasteTextToClaude(message.text);
     sendResponse({ success: true });
-  } else if (message.type === 'uploadImage') {
+  } else if (message.type === "uploadImage") {
     uploadImageToClaude(message.imageBlob, message.imageName);
     sendResponse({ success: true });
-  } else if (message.type === 'extractChat') {
-    console.log('Extract chat message received');
+  } else if (message.type === "extractChat") {
+    console.log("Extract chat message received");
     try {
       const chatData = extractChatConversation();
-      console.log('Chat data extracted:', chatData);
+      console.log("Chat data extracted:", chatData);
       sendResponse({ success: true, data: chatData });
     } catch (error) {
-      console.error('Error extracting chat:', error);
+      console.error("Error extracting chat:", error);
       sendResponse({ success: false, error: error.message });
     }
   }
@@ -27,9 +27,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Paste text into Claude's editor
 function pasteTextToClaude(text) {
-  const editor = document.querySelector('.ProseMirror');
+  const editor = document.querySelector(".ProseMirror");
   if (!editor) {
-    console.error('ProseMirror editor not found');
+    console.error("ProseMirror editor not found");
     return false;
   }
 
@@ -41,15 +41,15 @@ function pasteTextToClaude(text) {
   range.selectNodeContents(editor);
   selection.removeAllRanges();
   selection.addRange(range);
-  document.execCommand('delete');
+  document.execCommand("delete");
 
   // Paste text
   const clipboardData = new DataTransfer();
-  clipboardData.setData('text/plain', text);
-  const pasteEvent = new ClipboardEvent('paste', {
+  clipboardData.setData("text/plain", text);
+  const pasteEvent = new ClipboardEvent("paste", {
     bubbles: true,
     cancelable: true,
-    clipboardData: clipboardData
+    clipboardData: clipboardData,
   });
   editor.dispatchEvent(pasteEvent);
 
@@ -59,8 +59,8 @@ function pasteTextToClaude(text) {
 // Upload image to Claude
 function uploadImageToClaude(base64Data, imageName) {
   // Convert base64 to Blob
-  const parts = base64Data.split(';base64,');
-  const contentType = parts[0].split(':')[1];
+  const parts = base64Data.split(";base64,");
+  const contentType = parts[0].split(":")[1];
   const raw = atob(parts[1]);
   const rawLength = raw.length;
   const uInt8Array = new Uint8Array(rawLength);
@@ -80,46 +80,48 @@ function uploadImageToClaude(base64Data, imageName) {
     fileInput.files = dataTransfer.files;
 
     // Trigger events that Claude listens to
-    const changeEvent = new Event('change', { bubbles: true });
+    const changeEvent = new Event("change", { bubbles: true });
     fileInput.dispatchEvent(changeEvent);
 
-    const inputEvent = new Event('input', { bubbles: true });
+    const inputEvent = new Event("input", { bubbles: true });
     fileInput.dispatchEvent(inputEvent);
 
-    console.log('Image uploaded via file input');
+    console.log("Image uploaded via file input");
     return true;
   }
 
   // Method 2: Fallback to paste event
-  const editor = document.querySelector('.ProseMirror');
+  const editor = document.querySelector(".ProseMirror");
   if (editor) {
     editor.focus();
 
     // Add newline before image
     const textData = new DataTransfer();
-    textData.setData('text/plain', '\n');
-    editor.dispatchEvent(new ClipboardEvent('paste', {
-      bubbles: true,
-      cancelable: true,
-      clipboardData: textData
-    }));
+    textData.setData("text/plain", "\n");
+    editor.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: textData,
+      })
+    );
 
     // Paste image
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(file);
 
-    const pasteEvent = new ClipboardEvent('paste', {
+    const pasteEvent = new ClipboardEvent("paste", {
       bubbles: true,
       cancelable: true,
-      clipboardData: dataTransfer
+      clipboardData: dataTransfer,
     });
     editor.dispatchEvent(pasteEvent);
 
-    console.log('Image uploaded via paste event');
+    console.log("Image uploaded via paste event");
     return true;
   }
 
-  console.error('Could not find file input or editor');
+  console.error("Could not find file input or editor");
   return false;
 }
 
@@ -138,7 +140,7 @@ function extractChatConversation() {
 
   // Fallback to other possible selectors if first one doesn't work
   if (messageContainers.length === 0) {
-    messageContainers = document.querySelectorAll('article');
+    messageContainers = document.querySelectorAll("article");
   }
 
   if (messageContainers.length === 0) {
@@ -150,15 +152,15 @@ function extractChatConversation() {
   messageContainers.forEach((container, index) => {
     const isUser = detectIfUserMessage(container);
     const content = extractMessageContent(container);
-    const hasCode = container.querySelector('pre, code') !== null;
+    const hasCode = container.querySelector("pre, code") !== null;
 
     if (content.trim()) {
       messages.push({
-        role: isUser ? 'user' : 'assistant',
+        role: isUser ? "user" : "assistant",
         content: content,
         html: container.innerHTML,
         hasCode: hasCode,
-        index: index
+        index: index,
       });
     }
   });
@@ -167,7 +169,7 @@ function extractChatConversation() {
     chatId: extractChatId(),
     url: window.location.href,
     messages: messages,
-    totalMessages: messages.length
+    totalMessages: messages.length,
   };
 }
 
@@ -184,10 +186,10 @@ function detectIfUserMessage(container) {
   const classes = container.className.toLowerCase();
 
   // Try to detect based on common patterns
-  if (classes.includes('user') || classes.includes('human')) {
+  if (classes.includes("user") || classes.includes("human")) {
     return true;
   }
-  if (classes.includes('assistant') || classes.includes('claude')) {
+  if (classes.includes("assistant") || classes.includes("claude")) {
     return false;
   }
 
@@ -205,15 +207,17 @@ function extractMessageContent(container) {
 
   // Remove any UI elements that aren't part of the message
   // (buttons, icons, metadata, etc.)
-  clone.querySelectorAll('button, [role="button"]').forEach(el => el.remove());
+  clone
+    .querySelectorAll('button, [role="button"]')
+    .forEach((el) => el.remove());
 
   // Process code blocks to preserve formatting
-  const codeBlocks = clone.querySelectorAll('pre, code');
-  codeBlocks.forEach(codeBlock => {
+  const codeBlocks = clone.querySelectorAll("pre, code");
+  codeBlocks.forEach((codeBlock) => {
     // Get the code with preserved whitespace
     const code = codeBlock.textContent;
     // Replace the element with formatted text that preserves indentation
-    const formattedCode = '\n```\n' + code + '\n```\n';
+    const formattedCode = "\n```\n" + code + "\n```\n";
     codeBlock.replaceWith(document.createTextNode(formattedCode));
   });
 
