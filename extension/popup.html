@@ -1,65 +1,149 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>Mac Notes Search</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
-  <div class="container">
-    <div class="search-box">
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search your notes..."
-        autofocus
-      >
-      <button id="newNoteButton" class="new-note-button" title="Create new note">+ New Note</button>
-    </div>
-
-    <div id="status" class="status hidden"></div>
-
-    <div id="newNoteForm" class="new-note-form hidden">
-      <div class="form-header">
-        <h3>Create New Note</h3>
-        <button id="cancelNote" class="cancel-button">Cancel</button>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mac Notes Search</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="search-box">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search your notes..."
+          autofocus
+        />
+        <button
+          id="newNoteButton"
+          class="new-note-button"
+          title="Create new note"
+        >
+          + New Note
+        </button>
       </div>
-      <input
-        type="text"
-        id="noteTitleInput"
-        class="note-input"
-        placeholder="Note title..."
-        maxlength="200"
-      >
-      <textarea
-        id="noteBodyInput"
-        class="note-textarea"
-        placeholder="Note content (optional)..."
-        rows="6"
-      ></textarea>
-      <button id="createNote" class="create-button">Create Note</button>
-    </div>
 
-    <div id="results" class="results"></div>
+      <div id="status" class="status hidden"></div>
 
-    <div id="noteView" class="note-view hidden">
-      <div class="note-toolbar">
-        <button id="backButton" class="back-button">← Back to results</button>
-        <div class="toolbar-right">
-          <button id="sendToClaude" class="send-to-claude-button" title="Send note to Claude">💬 Send to Claude</button>
-          <div class="zoom-controls">
-            <button id="zoomOut" class="zoom-button" title="Zoom out (Cmd/Ctrl + -)">−</button>
-            <span id="zoomLevel" class="zoom-level">100%</span>
-            <button id="zoomIn" class="zoom-button" title="Zoom in (Cmd/Ctrl + +)">+</button>
-            <button id="zoomReset" class="zoom-button-reset" title="Reset zoom (Cmd/Ctrl + 0)">Reset</button>
+      <!-- Claude Chat Capture Button (shown only on claude.ai/chat/*) -->
+      <div id="claudeActions" class="claude-actions hidden">
+        <button id="captureChat" class="capture-button">
+          📝 Create Note from Chat
+        </button>
+      </div>
+
+      <div id="newNoteForm" class="new-note-form hidden">
+        <div class="form-header">
+          <h3>Create New Note</h3>
+          <button id="cancelNote" class="cancel-button">Cancel</button>
+        </div>
+        <input
+          type="text"
+          id="noteTitleInput"
+          class="note-input"
+          placeholder="Note title..."
+          maxlength="200"
+        />
+        <textarea
+          id="noteBodyInput"
+          class="note-textarea"
+          placeholder="Note content (optional)..."
+          rows="6"
+        ></textarea>
+        <button id="createNote" class="create-button">Create Note</button>
+      </div>
+
+      <div id="results" class="results"></div>
+
+      <div id="noteView" class="note-view hidden">
+        <div class="note-toolbar">
+          <button id="backButton" class="back-button">← Back to results</button>
+          <div class="toolbar-right">
+            <button
+              id="sendToClaude"
+              class="send-to-claude-button"
+              title="Send note to Claude"
+            >
+              Explain with Claude
+            </button>
+            <div class="zoom-controls">
+              <button
+                id="zoomOut"
+                class="zoom-button"
+                title="Zoom out (Cmd/Ctrl + -)"
+              >
+                −
+              </button>
+              <span id="zoomLevel" class="zoom-level">100%</span>
+              <button
+                id="zoomIn"
+                class="zoom-button"
+                title="Zoom in (Cmd/Ctrl + +)"
+              >
+                +
+              </button>
+              <button
+                id="zoomReset"
+                class="zoom-button-reset"
+                title="Reset zoom (Cmd/Ctrl + 0)"
+              >
+                Reset
+              </button>
+            </div>
           </div>
         </div>
+        <h2 id="noteTitle"></h2>
+        <div id="noteBody" class="note-body"></div>
       </div>
-      <h2 id="noteTitle"></h2>
-      <div id="noteBody" class="note-body"></div>
     </div>
-  </div>
 
-  <script src="popup.js"></script>
-</body>
+    <!-- Chat Preview Modal -->
+    <div id="chatPreview" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Create Note from Chat</h3>
+          <button id="closePreview" class="close-btn">✕</button>
+        </div>
+
+        <div class="extraction-modes">
+          <label>
+            <input type="radio" name="mode" value="quick" checked />
+            <span>Quick Save (Last 5 messages)</span>
+          </label>
+          <label>
+            <input type="radio" name="mode" value="code" />
+            <span>Code & Solutions Only</span>
+          </label>
+          <label>
+            <input type="radio" name="mode" value="full" />
+            <span>Full Conversation</span>
+          </label>
+          <label>
+            <input type="radio" name="mode" value="custom" />
+            <span>Custom Selection</span>
+          </label>
+        </div>
+
+        <input
+          type="text"
+          id="chatTitle"
+          class="chat-title-input"
+          placeholder="Note title (auto-generated if empty)"
+        />
+
+        <div id="messagesPreview" class="messages-preview">
+          <!-- Populated dynamically with message checkboxes for custom mode -->
+        </div>
+
+        <div class="modal-footer">
+          <span id="selectionInfo" class="selection-info"
+            >5 messages selected</span
+          >
+          <button id="saveChat" class="save-btn">Save to Notes</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
 </html>

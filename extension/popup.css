@@ -364,3 +364,197 @@ body {
   color: #86868b;
   font-size: 14px;
 }
+
+/* Claude Actions Button */
+.claude-actions {
+  padding: 12px;
+  background: #f5f5f7;
+  border-bottom: 1px solid #d1d1d6;
+}
+
+.capture-button {
+  width: 100%;
+  padding: 10px;
+  background: #34c759;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.capture-button:hover {
+  background: #2fb04a;
+}
+
+.capture-button:active {
+  background: #28a745;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #86868b;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.close-btn:hover {
+  background: #f5f5f7;
+}
+
+/* Extraction Modes */
+.extraction-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.extraction-modes label {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s;
+}
+
+.extraction-modes label:hover {
+  background: #f5f5f7;
+  border-color: #d1d1d6;
+}
+
+.extraction-modes input[type="radio"] {
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.extraction-modes label span {
+  font-size: 14px;
+  color: #1d1d1f;
+}
+
+/* Chat Title Input */
+.chat-title-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d1d6;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.chat-title-input:focus {
+  border-color: #007aff;
+}
+
+/* Messages Preview */
+.messages-preview {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #d1d1d6;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+  background: #f9f9f9;
+}
+
+.messages-preview:empty {
+  display: none;
+}
+
+/* Modal Footer */
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.selection-info {
+  font-size: 13px;
+  color: #86868b;
+}
+
+.save-btn {
+  padding: 10px 20px;
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.save-btn:hover {
+  background: #0051d5;
+}
+
+.save-btn:active {
+  background: #003d9e;
+}
+
+.save-btn:disabled {
+  background: #d1d1d6;
+  cursor: not-allowed;
+}
